@@ -181,14 +181,14 @@ echo "Fixing permissions..."
 chmod -Rf go-w "${MOUNT_DIR}" &> /dev/null || true
 echo "Done fixing permissions."
 
-# make the top window open itself on mount:
-echo "Blessing started"
-bless --folder "${MOUNT_DIR}" --openfolder "${MOUNT_DIR}"
-echo "Blessing finished"
-
-if ! test -z "$VOLUME_ICON_FILE"; then
-   # tell the volume that it has a special file attribute
-   SetFile -a C "$MOUNT_DIR"
+# Check if running on Apple Silicon
+if [[ $(uname -m) == 'arm64' ]]; then
+    echo "Running on Apple Silicon, skipping blessing step"
+else
+    # make the top window open itself on mount:
+    echo "Blessing started"
+    bless --folder "${MOUNT_DIR}" --openfolder "${MOUNT_DIR}"
+    echo "Blessing finished"
 fi
 
 # unmount
