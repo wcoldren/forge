@@ -20,23 +20,35 @@
     <iosInfoPList>resources/Info.plist.xml</iosInfoPList>
 
     <forceLinkClasses>
+        <!-- Core libGDX classes -->
         <pattern>com.badlogic.gdx.scenes.scene2d.ui.*</pattern>
         <pattern>com.badlogic.gdx.graphics.g2d.freetype.**</pattern>
         <pattern>com.badlogic.gdx.graphics.g2d.TextureAtlas*</pattern>
         <pattern>com.badlogic.gdx.graphics.g2d.SpriteBatch</pattern>
         <pattern>com.badlogic.gdx.graphics.glutils.ShaderProgram</pattern>
-        <!-- Force link OpenGL classes -->
-        <pattern>com.badlogic.gdx.backends.iosrobovm.IOSGLES20</pattern>
-        <pattern>com.badlogic.gdx.backends.iosrobovm.IOSGLES30</pattern>
-        <pattern>org.robovm.apple.opengles.*</pattern>
-
-        <!-- Additional libGDX classes -->
         <pattern>com.badlogic.gdx.graphics.g2d.BitmapFont</pattern>
         <pattern>com.badlogic.gdx.graphics.g2d.GlyphLayout</pattern>
         <pattern>com.badlogic.gdx.graphics.GL20</pattern>
         <pattern>com.badlogic.gdx.Gdx</pattern>
         <pattern>com.badlogic.gdx.graphics.Texture</pattern>
         <pattern>com.badlogic.gdx.scenes.scene2d.**</pattern>
+
+        <!-- iOS-specific classes - more selective patterns -->
+        <pattern>com.badlogic.gdx.backends.iosrobovm.IOSGLES20</pattern>
+        <pattern>com.badlogic.gdx.backends.iosrobovm.IOSGraphics</pattern>
+        <pattern>com.badlogic.gdx.backends.iosrobovm.IOSInput</pattern>
+        <pattern>org.robovm.apple.foundation.NSObject</pattern>
+        <pattern>org.robovm.apple.foundation.NSArray</pattern>
+        <pattern>org.robovm.apple.foundation.NSDictionary</pattern>
+        <pattern>org.robovm.apple.uikit.UIApplication</pattern>
+        <pattern>org.robovm.apple.uikit.UIScreen</pattern>
+        <pattern>org.robovm.apple.uikit.UIWindow</pattern>
+        <pattern>org.robovm.apple.uikit.UIViewController</pattern>
+        <pattern>org.robovm.apple.opengles.EAGL*</pattern>
+        <pattern>org.robovm.apple.opengles.EAGLContext*</pattern>
+        <pattern>org.robovm.apple.opengles.EAGLDrawable*</pattern>
+        <pattern>org.robovm.apple.glkit.GLKView*</pattern>
+        <pattern>org.robovm.apple.glkit.GLKViewController*</pattern>
     </forceLinkClasses>
 
     <frameworks>
@@ -47,6 +59,5 @@
         <framework>OpenAL</framework>
         <framework>AudioToolbox</framework>
         <framework>AVFoundation</framework>
-        <framework>Metal</framework>
     </frameworks>
 </config>
