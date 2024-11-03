@@ -3,20 +3,41 @@
     <mainClass>${app.mainclass}</mainClass>
     <os>ios</os>
     <arch>arm64</arch>
+    <target>ios</target>
 
     <resources>
         <resource>
-            <directory>src/main/resources</directory>
+            <directory>../forge-gui</directory>
             <includes>
-                <include>**</include>
+                <include>res/**</include>
             </includes>
-            <skipPngCrush>true</skipPngCrush>
+        </resource>
+        <resource>
+            <directory>resources</directory>
         </resource>
     </resources>
 
-    <target>ios</target>
+    <iosInfoPList>resources/Info.plist.xml</iosInfoPList>
 
-    <iosInfoPList>src/main/resources/Info.plist.xml</iosInfoPList>
+    <forceLinkClasses>
+        <pattern>com.badlogic.gdx.scenes.scene2d.ui.*</pattern>
+        <pattern>com.badlogic.gdx.graphics.g2d.freetype.**</pattern>
+        <pattern>com.badlogic.gdx.graphics.g2d.TextureAtlas*</pattern>
+        <pattern>com.badlogic.gdx.graphics.g2d.SpriteBatch</pattern>
+        <pattern>com.badlogic.gdx.graphics.glutils.ShaderProgram</pattern>
+        <!-- Force link OpenGL classes -->
+        <pattern>com.badlogic.gdx.backends.iosrobovm.IOSGLES20</pattern>
+        <pattern>com.badlogic.gdx.backends.iosrobovm.IOSGLES30</pattern>
+        <pattern>org.robovm.apple.opengles.*</pattern>
+
+        <!-- Additional libGDX classes -->
+        <pattern>com.badlogic.gdx.graphics.g2d.BitmapFont</pattern>
+        <pattern>com.badlogic.gdx.graphics.g2d.GlyphLayout</pattern>
+        <pattern>com.badlogic.gdx.graphics.GL20</pattern>
+        <pattern>com.badlogic.gdx.Gdx</pattern>
+        <pattern>com.badlogic.gdx.graphics.Texture</pattern>
+        <pattern>com.badlogic.gdx.scenes.scene2d.**</pattern>
+    </forceLinkClasses>
 
     <frameworks>
         <framework>UIKit</framework>
@@ -26,5 +47,6 @@
         <framework>OpenAL</framework>
         <framework>AudioToolbox</framework>
         <framework>AVFoundation</framework>
+        <framework>Metal</framework>
     </frameworks>
 </config>

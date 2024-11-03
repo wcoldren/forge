@@ -56,7 +56,8 @@
                 <configuration>
                     <arch>arm64</arch>
                     <os>ios</os>
-                    <iosSignIdentity>iOS Development</iosSignIdentity>
+                    <iosSignIdentity>iPhone Developer</iosSignIdentity>
+                    <debug>true</debug>
                 </configuration>
             </plugin>
         </plugins>
