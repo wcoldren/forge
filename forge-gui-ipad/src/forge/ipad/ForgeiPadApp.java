@@ -2,6 +2,7 @@ package forge.ipad;
 
 import org.robovm.apple.foundation.NSAutoreleasePool;
 import org.robovm.apple.uikit.UIApplication;
+import com.badlogic.gdx.backends.iosrobovm.IOSFiles;
 import com.badlogic.gdx.backends.iosrobovm.IOSApplication;
 import com.badlogic.gdx.backends.iosrobovm.IOSApplicationConfiguration;
 import forge.Forge;

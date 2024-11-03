@@ -1,6 +1,7 @@
 package forge.ipad;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.backends.iosrobovm.IOSFiles;
 import forge.interfaces.IDeviceAdapter;
 import org.apache.commons.lang3.tuple.Pair;
 import java.io.IOException;
@@ -23,6 +24,23 @@ public class iPadPlatform implements IDeviceAdapter {
     @Override
     public String getDownloadsDir() {
         return new IOSFiles().getExternalStoragePath();
+    }
+
+    @Override
+    public String getLatestChanges(String commitsAtom, Date buildDateOriginal, Date maxDate) {
+        // For now, return empty string. Can implement GitHub API calls later if needed
+        return "";
+    }
+
+    @Override
+    public String getReleaseTag(String releaseAtom) {
+        // For now, return empty string. Can implement release tag fetching later
+        return "";
+    }
+
+    @Override
+    public void closeSplashScreen() {
+        // iPad doesn't need this, it's primarily for desktop development
     }
 
     @Override
