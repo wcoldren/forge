@@ -11,9 +11,7 @@ public class ForgeiPadApp extends IOSApplication.Delegate {
     @Override
     protected IOSApplication createApplication() {
         IOSApplicationConfiguration config = new IOSApplicationConfiguration();
-
-        // Explicitly configure graphics settings
-        config.useGL30 = false;  // Force OpenGL ES 2.0
+        config.useGL30 = false;
         config.useAccelerometer = false;
         config.useCompass = false;
         config.preferredFramesPerSecond = 60;
