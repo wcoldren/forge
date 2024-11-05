@@ -1,1 +1,7 @@
+# iOS build specific
+/libs/**
+
+# RoboVM specific
 robovm-build/
+.robovm/
+

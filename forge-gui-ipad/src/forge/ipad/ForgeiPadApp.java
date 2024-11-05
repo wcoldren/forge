@@ -1,160 +1,141 @@
 package forge.ipad;
 
+import forge.Forge;
+import forge.util.FileUtil;
+
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.backends.iosrobovm.IOSApplication;
 import com.badlogic.gdx.backends.iosrobovm.IOSApplicationConfiguration;
-import com.badlogic.gdx.backends.iosrobovm.IOSFiles;
-import forge.Forge;
+import org.robovm.apple.glkit.GLKViewDrawableColorFormat;
+import org.robovm.apple.glkit.GLKViewDrawableDepthFormat;
+import org.robovm.apple.glkit.GLKViewDrawableStencilFormat;
+import org.robovm.apple.glkit.GLKViewDrawableMultisample;
+
+import org.robovm.apple.foundation.NSAutoreleasePool;
+import org.robovm.apple.foundation.NSBundle;
+import org.robovm.apple.foundation.NSFileManager;
+import org.robovm.apple.foundation.NSSearchPathDirectory;
+import org.robovm.apple.foundation.NSSearchPathDomainMask;
+import org.robovm.apple.uikit.UIApplication;
+import org.robovm.apple.uikit.UIDevice;
+import org.robovm.apple.uikit.UIUserInterfaceIdiom;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import org.robovm.apple.foundation.NSAutoreleasePool;
-import org.robovm.apple.foundation.NSBundle;
-import org.robovm.apple.uikit.UIApplication;
 
 /**
  * Main iPad application delegate class for Forge.
- * Handles initialization of the iOS application and LibGDX context.
  */
 public final class ForgeiPadApp extends IOSApplication.Delegate {
+    private static final String ASSETS_DIRECTORY = "Forge";
+    private static final int BUFFER_SIZE = 16384;
+    private static final String RES_PATH = "res";
+    private String assetsDirectory;
 
     /**
-     * Private constructor to prevent instantiation.
-     */
-    private ForgeiPadApp() {
-        super();
-    }
-
-    /**
-     * Creates and configures the main iOS application instance.
-     * Sets up LibGDX configuration and initializes the Forge application.
+     * Creates and configures the iOS application instance.
      *
-     * @return The configured iOS application instance.
+     * @return The configured iOS application instance
      */
     @Override
     protected IOSApplication createApplication() {
-        final IOSApplicationConfiguration config = new IOSApplicationConfiguration();
-        config.useGL30 = false;
+        IOSApplicationConfiguration config = configureApplication();
+        assetsDirectory = initializeAssetsDirectory();
+        createRequiredDirectories();
+        copyBundledResources();
+        createNoMediaFile();
+
+        return new IOSApplication(createForgeInstance(), config);
+    }
+
+    private IOSApplicationConfiguration configureApplication() {
+        IOSApplicationConfiguration config = new IOSApplicationConfiguration();
+        config.useGL30 = false;  // Force OpenGL ES 2.0
+        config.colorFormat = GLKViewDrawableColorFormat.RGBA8888;
+        config.depthFormat = GLKViewDrawableDepthFormat._24;
+        config.stencilFormat = GLKViewDrawableStencilFormat._8;
+        config.multisample = GLKViewDrawableMultisample.None;
+        config.preferredFramesPerSecond = 60;
         config.useAccelerometer = false;
         config.useCompass = false;
-        config.preferredFramesPerSecond = 60;
 
-        final String assetsDir = getAssetsDirectory();
-        System.out.println("Assets directory: " + assetsDir);
+        // Add these lines
+        System.setProperty("apple.awt.UIElement", "true");
 
-        final File assetsDirFile = new File(assetsDir);
-        if (!assetsDirFile.exists()) {
-            System.out.println("Creating assets directory");
-            assetsDirFile.mkdirs();
-        }
+        return config;
+    }
 
-        try {
-            copyBundledAssets(assetsDirFile);
-        } catch (final IOException e) {
-            System.err.println("Error copying assets: " + e.getMessage());
-            e.printStackTrace();
-        }
+    private String initializeAssetsDirectory() {
+        NSFileManager fileManager = NSFileManager.getDefaultManager();
+        String documentsPath = fileManager.getURLsForDirectory(
+                NSSearchPathDirectory.DocumentDirectory,
+                NSSearchPathDomainMask.UserDomainMask).get(0).getPath();
 
-        System.out.println("Assets directory contents after setup:");
-        listDirectoryContents(assetsDirFile, "");
+        return documentsPath + "/" + ASSETS_DIRECTORY;
+    }
 
-        try {
-            System.out.println("Initializing Forge application...");
-            final ApplicationListener forge = Forge.getApp(
-                    new iPadClipboard(),
-                    new iPadPlatform(),
-                    assetsDir,
-                    false,
-                    false,
-                    0,
-                    false,
-                    0,
-                    "",
-                    ""
-            );
+    private void createRequiredDirectories() {
+        String[] directories = {
+                assetsDirectory,
+                assetsDirectory + "/cache",
+                assetsDirectory + "/cache/pics",
+                assetsDirectory + "/cache/pics/cards",
+                assetsDirectory + "/cache/pics/tokens",
+                assetsDirectory + "/cache/pics/icons",
+                assetsDirectory + "/user",
+                assetsDirectory + "/logs"
+        };
 
-            if (forge == null) {
-                throw new RuntimeException("Forge.getApp() returned null");
-            }
-
-            System.out.println("Forge application initialized successfully");
-            return new IOSApplication(forge, config);
-        } catch (final Exception e) {
-            System.err.println("Error creating Forge application:");
-            e.printStackTrace();
-            throw new RuntimeException(e);
+        for (String directory : directories) {
+            FileUtil.ensureDirectoryExists(directory);
         }
     }
 
-    /**
-     * Copies bundled assets from the application bundle to the assets directory.
-     *
-     * @param assetsDir The destination directory for assets.
-     * @throws IOException If there's an error copying files.
-     */
-    private void copyBundledAssets(final File assetsDir) throws IOException {
-        final NSBundle bundle = NSBundle.getMainBundle();
-        final String bundlePath = bundle.getBundlePath();
-        System.out.println("Bundle path: " + bundlePath);
+    private void copyBundledResources() {
+        NSBundle bundle = NSBundle.getMainBundle();
+        File resourcesDir = new File(bundle.getBundlePath(), RES_PATH);
+        File targetDir = new File(assetsDirectory);
 
-        final File resourcesDir = new File(bundlePath, "res");
-        if (resourcesDir.exists()) {
-            System.out.println("Found resources at: " + resourcesDir.getAbsolutePath());
-            copyDirectory(resourcesDir, assetsDir);
-        } else {
-            System.out.println("Resources not found at: " + resourcesDir.getAbsolutePath());
-
-            final File altResourcesDir = new File(bundlePath, "Resources/res");
-            if (altResourcesDir.exists()) {
-                System.out.println("Found alternate resources at: " + altResourcesDir.getAbsolutePath());
-                copyDirectory(altResourcesDir, assetsDir);
-            } else {
-                System.out.println("No resources found in alternate location: " +
-                        altResourcesDir.getAbsolutePath());
+        if (!new File(targetDir, "LICENSE.txt").exists()) {
+            try {
+                System.out.println("Copying resources to: " + targetDir);
+                copyDirectoryContents(resourcesDir, targetDir);
+            } catch (IOException ex) {
+                System.err.println("Resource copy failed: " + ex.getMessage());
+                ex.printStackTrace();
             }
         }
     }
 
-    /**
-     * Recursively copies a directory.
-     *
-     * @param sourceDir The source directory.
-     * @param targetDir The target directory.
-     * @throws IOException If there's an error copying files.
-     */
-    private void copyDirectory(final File sourceDir, final File targetDir) throws IOException {
-        if (!targetDir.exists()) {
-            targetDir.mkdirs();
+    private void copyDirectoryContents(File source, File target) throws IOException {
+        if (!source.isDirectory()) {
+            copyFile(source, target);
+            return;
         }
 
-        final File[] files = sourceDir.listFiles();
+        if (!target.exists() && !target.mkdir()) {
+            throw new IOException("Failed to create directory: " + target);
+        }
+
+        File[] files = source.listFiles();
         if (files != null) {
-            for (final File file : files) {
-                final File targetFile = new File(targetDir, file.getName());
-                if (file.isDirectory()) {
-                    copyDirectory(file, targetFile);
-                } else {
-                    copyFile(file, targetFile);
-                    System.out.println("Copied: " + file + " to " + targetFile);
-                }
+            for (File child : files) {
+                copyDirectoryContents(
+                        new File(source, child.getName()),
+                        new File(target, child.getName())
+                );
             }
         }
     }
 
-    /**
-     * Copies a single file.
-     *
-     * @param sourceFile The source file.
-     * @param targetFile The target file.
-     * @throws IOException If there's an error copying the file.
-     */
-    private void copyFile(final File sourceFile, final File targetFile) throws IOException {
-        try (final InputStream in = new FileInputStream(sourceFile);
-             final OutputStream out = new FileOutputStream(targetFile)) {
-            final byte[] buffer = new byte[8192];
+    private void copyFile(File source, File target) throws IOException {
+        try (InputStream in = new FileInputStream(source);
+             OutputStream out = new FileOutputStream(target)) {
+            byte[] buffer = new byte[BUFFER_SIZE];
             int length;
             while ((length = in.read(buffer)) > 0) {
                 out.write(buffer, 0, length);
@@ -162,49 +143,59 @@ public final class ForgeiPadApp extends IOSApplication.Delegate {
         }
     }
 
-    /**
-     * Lists the contents of a directory and its subdirectories.
-     *
-     * @param dir The directory to list.
-     * @param indent The indentation string for formatting output.
-     */
-    private void listDirectoryContents(final File dir, final String indent) {
-        final File[] files = dir.listFiles();
-        if (files != null) {
-            for (final File file : files) {
-                System.out.println(indent + "- " + file.getName() +
-                        (file.isDirectory() ? "/" : "") +
-                        " (" + file.length() + " bytes)");
-                if (file.isDirectory()) {
-                    listDirectoryContents(file, indent + "  ");
+    private void createNoMediaFile() {
+        File noMedia = new File(assetsDirectory, ".nomedia");
+        if (!noMedia.exists()) {
+            try {
+                if (!noMedia.createNewFile()) {
+                    System.err.println("Failed to create .nomedia file");
                 }
+            } catch (IOException ex) {
+                System.err.println("Error creating .nomedia: " + ex.getMessage());
             }
-        } else {
-            System.out.println(indent + "(no files or unable to list)");
         }
     }
 
-    /**
-     * Gets the directory path where application assets should be stored.
-     *
-     * @return The full path to the assets directory.
-     */
-    private String getAssetsDirectory() {
-        final IOSFiles files = new IOSFiles();
-        final String baseDir = files.getLocalStoragePath();
-        System.out.println("Base storage path: " + baseDir);
-        return baseDir + File.separator + "Assets";
+    private ApplicationListener createForgeInstance() {
+        return Forge.getApp(
+                new iPadClipboard(),
+                new iPadPlatform(),
+                assetsDirectory,
+                false,
+                false,
+                getDeviceMemory(),
+                isDeviceTablet(),
+                getDeviceSystemVersion(),
+                getDeviceName(),
+                UIDevice.getCurrentDevice().getSystemName()
+        );
+    }
+
+    private int getDeviceMemory() {
+        return isDeviceTablet() ? 4096 : 2048;
+    }
+
+    private boolean isDeviceTablet() {
+        return UIDevice.getCurrentDevice().getUserInterfaceIdiom()
+                == UIUserInterfaceIdiom.Pad;
+    }
+
+    private int getDeviceSystemVersion() {
+        String version = UIDevice.getCurrentDevice().getSystemVersion();
+        return Integer.parseInt(version.split("\\.")[0]);
+    }
+
+    private String getDeviceName() {
+        return UIDevice.getCurrentDevice().getLocalizedModel();
     }
 
     /**
-     * Main entry point for the iPad application.
-     * Creates the autorelease pool and launches the UIApplication.
+     * Application entry point.
      *
-     * @param argv Command line arguments (not used).
+     * @param argv Command line arguments
      */
-    public static void main(final String[] argv) {
+    public static void main(String[] argv) {
         try (NSAutoreleasePool pool = new NSAutoreleasePool()) {
-            System.out.println("Starting Forge iPad application");
             UIApplication.main(argv, null, ForgeiPadApp.class);
         }
     }

@@ -11,75 +11,87 @@
     <packaging>jar</packaging>
     <name>Forge iPad</name>
 
+    <properties>
+        <robovm.version>2.3.20</robovm.version>
+        <gdx.version>1.13.0</gdx.version>
+    </properties>
+
     <dependencies>
-        <!-- Forge Mobile Dependencies -->
+        <!-- Internal Dependencies -->
         <dependency>
             <groupId>forge</groupId>
             <artifactId>forge-gui-mobile</artifactId>
             <version>${project.version}</version>
         </dependency>
 
-        <!-- MobiVM Dependencies -->
+        <!-- RoboVM Dependencies -->
         <dependency>
             <groupId>com.mobidevelop.robovm</groupId>
             <artifactId>robovm-rt</artifactId>
-            <version>2.3.20</version>
+            <version>${robovm.version}</version>
         </dependency>
         <dependency>
             <groupId>com.mobidevelop.robovm</groupId>
             <artifactId>robovm-cocoatouch</artifactId>
-            <version>2.3.20</version>
+            <version>${robovm.version}</version>
         </dependency>
 
-        <!-- LibGDX iOS Backend -->
+        <!-- LibGDX Dependencies -->
         <dependency>
             <groupId>com.badlogicgames.gdx</groupId>
             <artifactId>gdx-backend-robovm</artifactId>
-            <version>1.13.0</version>
+            <version>${gdx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.badlogicgames.gdx</groupId>
+            <artifactId>gdx-platform</artifactId>
+            <version>${gdx.version}</version>
+            <classifier>natives-ios</classifier>
         </dependency>
     </dependencies>
 
     <build>
         <sourceDirectory>src</sourceDirectory>
         <plugins>
+            <!-- Native Library Extraction -->
             <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>17</source>
-                    <target>17</target>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>3.3.1</version>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>copy-resources</id>
-                        <phase>validate</phase>
+                        <id>unpack-ios-natives</id>
+                        <phase>initialize</phase>
                         <goals>
-                            <goal>copy-resources</goal>
+                            <goal>unpack</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${project.build.directory}/resources</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>../forge-gui/res</directory>
-                                    <filtering>false</filtering>
-                                </resource>
-                            </resources>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>com.badlogicgames.gdx</groupId>
+                                    <artifactId>gdx-platform</artifactId>
+                                    <version>${gdx.version}</version>
+                                    <classifier>natives-ios</classifier>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.basedir}/libs</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- RoboVM Build -->
             <plugin>
                 <groupId>com.mobidevelop.robovm</groupId>
                 <artifactId>robovm-maven-plugin</artifactId>
-                <version>2.3.20</version>
+                <version>${robovm.version}</version>
                 <configuration>
                     <arch>arm64</arch>
                     <os>ios</os>
                     <iosSignIdentity>iPhone Developer</iosSignIdentity>
                     <debug>true</debug>
+                    <configFile>${project.basedir}/robovm.xml</configFile>
                 </configuration>
             </plugin>
         </plugins>
