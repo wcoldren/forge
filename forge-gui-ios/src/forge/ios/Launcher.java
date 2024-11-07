@@ -8,7 +8,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 
-public class Game extends ApplicationAdapter {
+public class Launcher extends ApplicationAdapter {
     private SpriteBatch batch;
     private Texture splashTexture;
     private TextureRegion mainImage;
