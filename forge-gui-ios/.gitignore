@@ -1,0 +1,8 @@
+# Ignore these dirs for now
+libs/
+robovm-build/
+target/
+
+# and flattened pom
+.flattened*
+

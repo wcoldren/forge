@@ -1,12 +1,23 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <groupId>forge.ios</groupId>
+    <artifactId>forge-gui-ios</artifactId>
+    <packaging>jar</packaging>
+    <name>Forge iOS</name>
+
     <properties>
-        <maven.build.timestamp.format>yyyyMMdd-HHmm</maven.build.timestamp.format>
-        <packaging.type>jar</packaging.type>
-        <build.min.memory>-Xms128m</build.min.memory>
-        <build.max.memory>-Xmx2048m</build.max.memory>
+        <timestamp>${maven.build.timestamp}</timestamp>
+        <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss</maven.build.timestamp.format>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <robovm.version>2.3.20</robovm.version>
+        <gdx.version>1.13.0</gdx.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
     </properties>
+
 
     <parent>
         <artifactId>forge</artifactId>
@@ -14,31 +25,42 @@
         <version>${revision}</version>
     </parent>
 
-    <artifactId>forge-gui-ios</artifactId>
-    <packaging>${packaging.type}</packaging>
-    <name>Forge iOS</name>
 
-    <build>
-        <sourceDirectory>src</sourceDirectory>
-        <plugins>
-            <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>17</source>
-                    <target>17</target>
-                </configuration>
-            </plugin>
-        </plugins>
-        <resources>
-            <resource>
-                <directory>filters</directory>
-                <filtering>true</filtering>
-            </resource>
-        </resources>
-        <finalName>forge-ios-${revision}</finalName>
-    </build>
+
 
     <dependencies>
+        <!-- RoboVM Dependencies -->
+        <dependency>
+            <groupId>com.mobidevelop.robovm</groupId>
+            <artifactId>robovm-rt</artifactId>
+            <version>${robovm.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.mobidevelop.robovm</groupId>
+            <artifactId>robovm-cocoatouch</artifactId>
+            <version>${robovm.version}</version>
+        </dependency>
+
+        <!-- LibGDX Dependencies -->
+        <dependency>
+            <groupId>com.badlogicgames.gdx</groupId>
+            <artifactId>gdx</artifactId>
+            <version>${gdx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.badlogicgames.gdx</groupId>
+            <artifactId>gdx-backend-robovm</artifactId>
+            <version>${gdx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.badlogicgames.gdx</groupId>
+            <artifactId>gdx-platform</artifactId>
+            <version>${gdx.version}</version>
+            <classifier>natives-ios</classifier>
+        </dependency>
+
+
+    <!-- forge Dependencies -->
         <dependency>
             <groupId>forge</groupId>
             <artifactId>forge-core</artifactId>
@@ -64,10 +86,101 @@
             <artifactId>forge-gui-mobile</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>com.badlogicgames.gdx</groupId>
-            <artifactId>gdx-backend-robovm</artifactId>
-            <version>1.13.0</version>
-        </dependency>
     </dependencies>
+
+    <build>
+        <sourceDirectory>src/forge/ios</sourceDirectory>
+        <resources>
+            <resource>
+                <directory>assets/fallback_skin</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>**/*</include>
+                </includes>
+            </resource>
+        </resources>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>copy-resource</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/classes</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>assets</directory>
+                                    <filtering>false</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                </configuration>
+            </plugin>
+
+            <!-- Native Library Extraction -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-ios-natives</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>com.badlogicgames.gdx</groupId>
+                                    <artifactId>gdx-platform</artifactId>
+                                    <version>${gdx.version}</version>
+                                    <classifier>natives-ios</classifier>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.basedir}/libs</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- RoboVM Build -->
+            <plugin>
+                <groupId>com.mobidevelop.robovm</groupId>
+                <artifactId>robovm-maven-plugin</artifactId>
+                <version>${robovm.version}</version>
+                <configuration>
+                    <arch>arm64</arch>
+                    <os>ios</os>
+                    <iosSkipSigning>true</iosSkipSigning>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>ca.mestevens.ios</groupId>
+                <artifactId>xcode-maven-plugin</artifactId>
+                <version>0.9.4</version>
+                <extensions>true</extensions>
+            </plugin>
+
+        </plugins>
+    </build>
 </project>

@@ -1,142 +1,53 @@
 package forge.ios;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Date;
-
-import org.apache.commons.lang3.tuple.Pair;
-import org.robovm.apple.foundation.NSAutoreleasePool;
-import org.robovm.apple.uikit.UIApplication;
-import org.robovm.apple.uikit.UIPasteboard;
-
-import com.badlogic.gdx.ApplicationListener;
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.backends.iosrobovm.IOSApplication;
 import com.badlogic.gdx.backends.iosrobovm.IOSApplicationConfiguration;
-import com.badlogic.gdx.backends.iosrobovm.IOSFiles;
-
-import forge.Forge;
-import forge.interfaces.IDeviceAdapter;
+import org.robovm.apple.foundation.NSAutoreleasePool;
+import org.robovm.apple.glkit.GLKViewDrawableColorFormat;
+import org.robovm.apple.glkit.GLKViewDrawableDepthFormat;
+import org.robovm.apple.glkit.GLKViewDrawableMultisample;
+import org.robovm.apple.glkit.GLKViewDrawableStencilFormat;
+import org.robovm.apple.uikit.UIApplication;
 
 public class Main extends IOSApplication.Delegate {
+    private static final boolean USE_GL30 = false;
+    private static final int FRAMES_PER_SECOND = 60;
 
     @Override
     protected IOSApplication createApplication() {
-        final String assetsDir = new IOSFiles().getLocalStoragePath() + "/../../forge.ios.Main.app/";
+        IOSApplicationConfiguration config = new IOSApplicationConfiguration();
 
-        final IOSApplicationConfiguration config = new IOSApplicationConfiguration();
+        // Basic configuration
         config.useAccelerometer = false;
         config.useCompass = false;
-        final ApplicationListener app = Forge.getApp(new IOSClipboard(), new IOSAdapter(), assetsDir, false, false, 0, false, 0, "", "");
-        final IOSApplication iosApp = new IOSApplication(app, config);
-        return iosApp;
+        config.useGL30 = USE_GL30;
+        config.preferredFramesPerSecond = FRAMES_PER_SECOND;
+
+        // OpenGL ES configuration
+        config.colorFormat = GLKViewDrawableColorFormat.RGBA8888;
+        config.depthFormat = GLKViewDrawableDepthFormat._24;
+        config.stencilFormat = GLKViewDrawableStencilFormat._8;
+        config.multisample = GLKViewDrawableMultisample.None;
+
+        // Additional configuration for stable GL context
+        config.useHaptics = false;
+        config.preventScreenDimming = true;
+
+        return new IOSApplication(new forge.ios.Launcher(), config);
     }
 
-    public static void main(String[] args) {
-        final NSAutoreleasePool pool = new NSAutoreleasePool();
-        UIApplication.main(args, null, Main.class);
-        pool.close();
-    }
+    public static void main(String[] argv) {
+        NSAutoreleasePool pool = new NSAutoreleasePool();
+        try {
+            // Force load GLES classes
+            Class.forName("com.badlogic.gdx.backends.iosrobovm.IOSGLES20");
+            Class.forName("com.badlogic.gdx.backends.iosrobovm.IOSGraphics");
 
-    //special clipboard that works on iOS
-    private static final class IOSClipboard implements com.badlogic.gdx.utils.Clipboard {
-        @Override
-        public boolean hasContents() {
-            return UIPasteboard.getGeneralPasteboard().toString().length() > 0;
-        }
-
-        @Override
-        public String getContents() {
-            return UIPasteboard.getGeneralPasteboard().getString();
-        }
-
-        @Override
-        public void setContents(final String contents0) {
-            UIPasteboard.getGeneralPasteboard().setString(contents0);
-        }
-    }
-
-    private static final class IOSAdapter implements IDeviceAdapter {
-        @Override
-        public boolean isConnectedToInternet() {
-            return true;
-        }
-
-        @Override
-        public boolean isConnectedToWifi() {
-            return true;
-        }
-
-        @Override
-        public String getDownloadsDir() {
-            return new IOSFiles().getExternalStoragePath();
-        }
-
-        @Override
-        public String getVersionString() {
-            return "0.0";
-        }
-
-        @Override
-        public String getLatestChanges(String commitsAtom, Date buildDateOriginal, Date maxDate) {
-            return "";
-        }
-
-        @Override
-        public String getReleaseTag(String releaseAtom) {
-            return "";
-        }
-
-        @Override
-        public boolean openFile(final String filename) {
-            return new IOSFiles().local(filename).exists();
-        }
-
-        @Override
-        public void setLandscapeMode(final boolean landscapeMode) {
-            // TODO implement this
-        }
-
-        @Override
-        public void preventSystemSleep(boolean preventSleep) {
-            // TODO implement this
-        }
-
-        @Override
-        public boolean isTablet() {
-            return Gdx.graphics.getWidth() > Gdx.graphics.getHeight();
-        }
-
-        @Override
-        public void restart() {
-            // Not possible on iOS
-        }
-
-        @Override
-        public void exit() {
-            // Not possible on iOS
-        }
-
-        @Override
-        public void closeSplashScreen() {
-            //only for desktop mobile-dev
-        }
-
-        @Override
-        public void convertToJPEG(InputStream input, OutputStream output) throws IOException {
-
-        }
-
-        @Override
-        public Pair<Integer, Integer> getRealScreenSize(boolean real) {
-            return Pair.of(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        }
-
-        @Override
-        public ArrayList<String> getGamepads() {
-            return new ArrayList<>();
+            UIApplication.main(argv, null, forge.ios.Main.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            pool.close();
         }
     }
 }
